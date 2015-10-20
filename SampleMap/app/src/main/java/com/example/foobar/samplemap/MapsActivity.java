@@ -33,7 +33,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		super.onCreate( savedInstanceState );
 		setContentView( R.layout.activity_maps );
 		// Obtain the SupportMapFragment and get notified when the map is ready to be used.
-		SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+		SupportMapFragment mapFragment = (SupportMapFragment)getSupportFragmentManager()
 												.findFragmentById( R.id.map );
 		mapFragment.getMapAsync( this );
 	}
@@ -51,6 +51,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 	@Override
 	public void onMapReady( GoogleMap googleMap ) {
 		mMap = googleMap;
+		RequestQueue mQueue;
 
 		/* Marker
 		// Add a marker in Sydney and move the camera
@@ -86,7 +87,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		builder.appendQueryParameter( "units", "metric" );
 		builder.appendQueryParameter( "key", key );
 
-		Log.d( "uri", builder.build().toString() );
+		Log.e( "uri", builder.build().toString() );
 		// Toast.makeText( MapsActivity.this, builder.build().toString(), Toast.LENGTH_SHORT ).show();
+
+		// Volley
+		mQueue = Volley.newRequestQueue( this );
+
+		Response.Listener< JSONObject > listener = new Response.Listener< JSONObject >() {
+			@Override
+			public void onResponse( JSONObject response ) {
+				Log.e( "volley", "success" );
+			}
+		};
+
+		Response.ErrorListener error = new Response.ErrorListener() {
+			@Override
+			public void onErrorResponse( VolleyError error ) {
+				Log.e( "volley", "error" );
+			}
+		};
+
+		JsonObjectRequest request = new JsonObjectRequest( Request.Method.GET, builder.build().toString(), null, listener, error );
+		mQueue.add( request );
 	}
 }
