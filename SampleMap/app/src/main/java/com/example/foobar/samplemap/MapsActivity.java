@@ -1,20 +1,15 @@
 package com.example.foobar.samplemap;
 
-import android.Manifest;
-import android.annotation.TargetApi;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.net.Uri;
-import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.util.Log;
 
 import com.android.volley.Request;
@@ -30,10 +25,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.android.gms.vision.barcode.Barcode;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -144,7 +136,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 	public void onMapReady( GoogleMap googleMap )
 	{
 		mMap = googleMap;
-		RequestQueue mQueue;
+
+		RequestQueue queue;
 
 		/* Marker
 		// Add a marker in Sydney and move the camera
@@ -161,71 +154,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		mMap.addPolyline( options );
 		*/
 
-		// Get a Direction
+		// Move Camera
+		float zoom = 10.0f;
+		float tilt = 0.0f;
+		float bear = 0.0f;
+		LatLng defaultPosition = new LatLng( 35.681061, 139.767096 );
+		CameraPosition position = new CameraPosition( defaultPosition, zoom, tilt, bear );
+		CameraUpdate update = CameraUpdateFactory.newCameraPosition( position );
+		mMap.moveCamera( update );
+
+		// Directions API
+		queue = Volley.newRequestQueue( this );
 		String key = getResources().getString( R.string.server_key );
-		Uri.Builder builder = new Uri.Builder();
-		builder.scheme( "https" );
-		builder.authority( "maps.googleapis.com" );
-		builder.path( "/maps/api/directions/json" );
-		builder.appendQueryParameter( "origin", "35.608787,139.749507" );
-		builder.appendQueryParameter( "destination", "35.606125,139.749354" );
-		builder.appendQueryParameter( "mode", "walking" );
-		builder.appendQueryParameter( "avoid", "indoor" );
-		builder.appendQueryParameter( "units", "metric" );
-		builder.appendQueryParameter( "key", key );
+		DirectionsAPI dapi = new DirectionsAPI( mMap, key );
 
-		Log.e( "uri", builder.build().toString() );
-		// Toast.makeText( MapsActivity.this, builder.build().toString(), Toast.LENGTH_SHORT ).show();
-
-		// Volley
-		mQueue = Volley.newRequestQueue( this );
-
-		Response.Listener< JSONObject > listener = new Response.Listener< JSONObject >() {
-			@Override
-			public void onResponse( JSONObject response ) throws JSONException {
-				Log.e( "volley", "success" );
-
-				JSONArray steps = response.getJSONArray( "routes" )
-														.getJSONObject( 0 )
-														.getJSONArray( "legs" )
-														.getJSONObject( 0 )
-														.getJSONArray( "steps" );
-
-				for ( int i = 0; i < steps.length(); ++i ) {
-					JSONObject step = steps.getJSONObject( i );
-
-					JSONObject staLoc = step.getJSONObject( "start_location" );
-					LatLng sta = new LatLng( staLoc.getDouble( "lat" ), staLoc.getDouble( "lng" ) );
-
-					JSONObject endLoc = step.getJSONObject( "end_location" );
-					LatLng end = new LatLng( endLoc.getDouble( "lat" ), endLoc.getDouble( "lng" ) );
-
-					// PolylineOptions options = new PolylineOptions().add( sta, end ).color( Color.RED );
-
-					String points = step.getJSONObject( "polyline" ).getString( "points" );
-					ArrayList< LatLng > pointList = PolylineDecoder.decodePoints( points );
-					Log.e( "decoder", points );
-					PolylineOptions options = new PolylineOptions().color( Color.RED );
-
-					for ( LatLng point : pointList ) {
-						Log.e( "lat", String.valueOf( point.latitude ) );
-						Log.e( "lng", String.valueOf( point.longitude ) );
-						options.add( point );
-					}
-
-					mMap.addPolyline( options );
-				}
-			}
-		};
-
-		Response.ErrorListener error = new Response.ErrorListener() {
-			@Override
-			public void onErrorResponse( VolleyError error ) {
-				Log.e( "volley", "error" );
-			}
-		};
-
-		JsonObjectRequest request = new JsonObjectRequest( Request.Method.GET, builder.build().toString(), null, listener, error );
-		mQueue.add( request );
+		queue.add( dapi.getRequest( new LatLng( 35.613495, 139.744841 ), new LatLng( 35.606229, 139.744285 ), Color.RED ) );
+		queue.add( dapi.getRequest( new LatLng( 35.607475, 139.744543 ), new LatLng( 35.608708, 139.743981 ), Color.GREEN ) );
+		queue.add( dapi.getRequest( new LatLng( 35.605155, 139.747031 ), new LatLng( 35.604909, 139.743541 ), Color.YELLOW ) );
+		queue.add( dapi.getRequest( new LatLng( 35.607519, 139.743220 ), new LatLng( 35.605129, 139.741669 ), Color.BLUE ) );
 	}
 }
