@@ -6,17 +6,12 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
-import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 
-import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -25,13 +20,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.PolylineOptions;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
 	private GoogleMap mMap;
@@ -137,22 +126,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 	{
 		mMap = googleMap;
 
-		RequestQueue queue;
+		GoogleMap.OnMapClickListener listener = new GoogleMap.OnMapClickListener() {
+			@Override
+			public void onMapClick( LatLng tapped ) {
+				MarkerOptions options = new MarkerOptions().position( tapped );
+				mMap.addMarker( options );
+			}
+		};
 
-		/* Marker
-		// Add a marker in Sydney and move the camera
-		LatLng sydney = new LatLng(-34, 151);
-		mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-		mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-		*/
-
-		/*
-		// Add Polylines
-		LatLng sta = new LatLng( 35.606418, 139.749556 );
-		LatLng end = new LatLng( 35.604742, 139.748413 );
-		PolylineOptions options = new PolylineOptions().add( sta, end ).color( Color.RED );
-		mMap.addPolyline( options );
-		*/
+		mMap.setOnMapClickListener( listener );
 
 		// Move Camera
 		float zoom = 10.0f;
@@ -164,7 +146,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		mMap.moveCamera( update );
 
 		// Directions API
-		queue = Volley.newRequestQueue( this );
+		RequestQueue queue = Volley.newRequestQueue( this );
 		String key = getResources().getString( R.string.server_key );
 		DirectionsAPI dapi = new DirectionsAPI( mMap, key );
 
