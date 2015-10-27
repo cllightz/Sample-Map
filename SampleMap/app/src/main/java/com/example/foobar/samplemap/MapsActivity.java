@@ -12,6 +12,7 @@ import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 
 import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -20,12 +21,19 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
 	private GoogleMap mMap;
+	private RequestQueue mQueue;
 	private LocationManager mManager;
 	private boolean mGPSChanged;
+	private int mTaps;
+	private LatLng mTmpOrigin;
+	private Marker mTmpMarker;
+	private JsonObjectRequest mTmpRequest;
 	
 	@Override
 	protected void onCreate( Bundle savedInstanceState ) {
@@ -35,6 +43,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
 												.findFragmentById( R.id.map );
 		mapFragment.getMapAsync( this );
+
+		mQueue = Volley.newRequestQueue( this );
 
 		// LocationManager
 		mManager = (LocationManager)getSystemService( LOCATION_SERVICE );
@@ -46,6 +56,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		}
 
 		mGPSChanged = false;
+
+		mTaps = 0;
 	}
 
 	@Override
@@ -75,6 +87,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		LatLng current = new LatLng( lat, lng );
 		Log.e( "GPS", "changed: " + lat + ", " + lng );
 
+		// GPSを初めて掴んだ時にカメラを移動
+		/*
 		if ( ! mGPSChanged ) {
 			// Move Camera
 			float zoom = 17.0f;
@@ -86,6 +100,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 			mGPSChanged = true;
 		}
+		*/
 	}
 
 	@Override
@@ -129,8 +144,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		GoogleMap.OnMapClickListener listener = new GoogleMap.OnMapClickListener() {
 			@Override
 			public void onMapClick( LatLng tapped ) {
-				MarkerOptions options = new MarkerOptions().position( tapped );
-				mMap.addMarker( options );
+				if ( mTaps == 0 ) {
+					mTmpOrigin = tapped;
+
+					MarkerOptions options = new MarkerOptions().position( tapped );
+					mTmpMarker = mMap.addMarker( options );
+
+					++mTaps;
+				} else if ( mTaps == 1 ) {
+					// Directions API
+					String key = getResources().getString( R.string.server_key );
+					DirectionsAPI dapi = new DirectionsAPI( mMap, key );
+					mTmpRequest = dapi.getRequest( mTmpOrigin, tapped, Color.RED );
+					mQueue.add( mTmpRequest );
+
+					mTmpMarker.remove();
+
+					mTaps = 0;
+				} else {
+					Log.e( "OnMapClick", "mTaps != 0 && mTaps != 1" );
+				}
 			}
 		};
 
@@ -145,14 +178,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 		CameraUpdate update = CameraUpdateFactory.newCameraPosition( position );
 		mMap.moveCamera( update );
 
+		/*
 		// Directions API
-		RequestQueue queue = Volley.newRequestQueue( this );
 		String key = getResources().getString( R.string.server_key );
 		DirectionsAPI dapi = new DirectionsAPI( mMap, key );
 
-		queue.add( dapi.getRequest( new LatLng( 35.613495, 139.744841 ), new LatLng( 35.606229, 139.744285 ), Color.RED ) );
-		queue.add( dapi.getRequest( new LatLng( 35.607475, 139.744543 ), new LatLng( 35.608708, 139.743981 ), Color.GREEN ) );
-		queue.add( dapi.getRequest( new LatLng( 35.605155, 139.747031 ), new LatLng( 35.604909, 139.743541 ), Color.YELLOW ) );
-		queue.add( dapi.getRequest( new LatLng( 35.607519, 139.743220 ), new LatLng( 35.605129, 139.741669 ), Color.BLUE ) );
+		mQueue.add( mDapi.getRequest( new LatLng( 35.613495, 139.744841 ), new LatLng( 35.606229, 139.744285 ), Color.RED ) );
+		mQueue.add( mDapi.getRequest( new LatLng( 35.607475, 139.744543 ), new LatLng( 35.608708, 139.743981 ), Color.GREEN ) );
+		mQueue.add( mDapi.getRequest( new LatLng( 35.605155, 139.747031 ), new LatLng( 35.604909, 139.743541 ), Color.YELLOW ) );
+		mQueue.add( mDapi.getRequest( new LatLng( 35.607519, 139.743220 ), new LatLng( 35.605129, 139.741669 ), Color.BLUE ) );
+		*/
 	}
 }
