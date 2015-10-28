@@ -1,2 +1,3 @@
 include ':app'
 include ':modules:volley'
+include ':modules:android-floating-action-button'
