@@ -1,3 +1,6 @@
 [submodule "SampleMap/modules/volley"]
 	path = SampleMap/modules/volley
 	url = https://android.googlesource.com/platform/frameworks/volley
+[submodule "android-floating-action-button"]
+	path = android-floating-action-button
+	url = https://github.com/futuresimple/android-floating-action-button
