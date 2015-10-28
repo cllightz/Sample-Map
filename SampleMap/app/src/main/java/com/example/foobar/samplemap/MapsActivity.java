@@ -2,6 +2,7 @@ package com.example.foobar.samplemap;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -21,7 +22,6 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -34,13 +34,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 	private LatLng mTmpOrigin;
 	private Marker mTmpMarker;
 	private JsonObjectRequest mTmpRequest;
-	
+
 	@Override
 	protected void onCreate( Bundle savedInstanceState ) {
 		super.onCreate( savedInstanceState );
 		setContentView( R.layout.activity_maps );
 		// Obtain the SupportMapFragment and get notified when the map is ready to be used.
-		SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+		SupportMapFragment mapFragment = (SupportMapFragment)getSupportFragmentManager()
 												.findFragmentById( R.id.map );
 		mapFragment.getMapAsync( this );
 
@@ -169,24 +169,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 		mMap.setOnMapClickListener( listener );
 
-		// Move Camera
-		float zoom = 10.0f;
+		float zoom = 1.0f;
 		float tilt = 0.0f;
 		float bear = 0.0f;
-		LatLng defaultPosition = new LatLng( 35.681061, 139.767096 );
-		CameraPosition position = new CameraPosition( defaultPosition, zoom, tilt, bear );
-		CameraUpdate update = CameraUpdateFactory.newCameraPosition( position );
-		mMap.moveCamera( update );
+		LatLng defaultLocation = new LatLng( 35.0, 139.0 );
+		CameraPosition defaultPosition = new CameraPosition( defaultLocation, zoom, tilt, bear );
+		CameraUpdate defaultUpdate = CameraUpdateFactory.newCameraPosition( defaultPosition );
+		mMap.moveCamera( defaultUpdate );
 
-		/*
-		// Directions API
-		String key = getResources().getString( R.string.server_key );
-		DirectionsAPI dapi = new DirectionsAPI( mMap, key );
+		// Move Camera
+		zoom = 10.0f;
+		LatLng latlng = null;
 
-		mQueue.add( mDapi.getRequest( new LatLng( 35.613495, 139.744841 ), new LatLng( 35.606229, 139.744285 ), Color.RED ) );
-		mQueue.add( mDapi.getRequest( new LatLng( 35.607475, 139.744543 ), new LatLng( 35.608708, 139.743981 ), Color.GREEN ) );
-		mQueue.add( mDapi.getRequest( new LatLng( 35.605155, 139.747031 ), new LatLng( 35.604909, 139.743541 ), Color.YELLOW ) );
-		mQueue.add( mDapi.getRequest( new LatLng( 35.607519, 139.743220 ), new LatLng( 35.605129, 139.741669 ), Color.BLUE ) );
-		*/
+		try {
+			zoom = 15.0f;
+			Location location = mManager.getLastKnownLocation( mManager.getBestProvider( new Criteria(), true ) );
+			latlng = new LatLng( location.getLatitude(), location.getLongitude() );
+		} catch ( Exception e ) {
+			Log.e( "getLastKnownLocation", "Exception" );
+			zoom = 10.0f;
+			latlng = new LatLng( 35.681061, 139.767096 );
+		} finally {
+			CameraPosition position = new CameraPosition( latlng, zoom, tilt, bear );
+			CameraUpdate update = CameraUpdateFactory.newCameraPosition( position );
+			mMap.animateCamera( update );
+		}
 	}
 }
